@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart IMEI Cloud v3.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --dark: #343a40; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 15px; background: var(--bg); margin: 0; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
+        .status-badge { font-size: 12px; padding: 5px 10px; border-radius: 5px; background: #eee; }
+        .online { color: var(--success); font-weight: bold; }
+        
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 11px; font-weight: bold; color: #666; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        
+        .scan-box { width: 100%; padding: 15px; border: 2px solid var(--warning); border-radius: 10px; font-size: 1.2rem; text-align: center; margin-bottom: 15px; outline: none; transition: 0.3s; }
+        .scan-box:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,123,255,0.2); }
+        
+        .table-wrapper { max-height: 400px; overflow-y: auto; margin-top: 20px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: var(--primary); color: white; padding: 12px; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        
+        #toast { visibility: hidden; min-width: 250px; background: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); }
+        #toast.show { visibility: visible; animation: fadein 0.5s; }
+        
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        .loading { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="toast">Notifikasi</div>
+
+<div class="container" id="mainApp">
+    <div class="header">
+        <h2>🚀 IMEI Cloud Sync</h2>
+        <div class="status-badge">Status: <span class="online">ONLINE (SHARED)</span></div>
+    </div>
+
+    <div class="config-grid">
+        <div class="input-group">
+            <label>NAMA SCANNER</label>
+            <input type="text" id="userInput" placeholder="Nama Anda..." autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>SITE</label>
+            <select id="siteSelect">
+                <option value="DCM5">DCM5</option>
+                <option value="DCQF">DCQF</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>LOKASI BIN</label>
+            <input type="text" id="binInput" placeholder="Contoh: A-01-05" autocomplete="off">
+        </div>
+    </div>
+
+    <input type="text" id="scannerInput" class="scan-box" placeholder="Klik di sini & mulai scan..." autofocus>
+
+    <div style="display: flex; gap: 10px;">
+        <button onclick="exportToExcel()" style="background:var(--success); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; flex:1;">📊 Download Excel Lokal</button>
+        <button onclick="resetLokal()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">🗑️ Clear View</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Waktu</th>
+                    <th>User</th>
+                    <th>Bin</th>
+                    <th>IMEI</th>
+                    <th>Status Sync</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOgcdYaNuwrjsni-LVvfLJwFSI3u8IlfmyS8YRR39FqNCj-gt6dyR33fWsFHdNIf3D/exec'; // <-- MASUKKAN URL DISINI
+    
+    const scannerInput = document.getElementById('scannerInput');
+    const tableBody = document.getElementById('tableBody');
+    const toast = document.getElementById('toast');
+    
+    let localHistory = [];
+
+    // Validasi Luhn
+    function isValidLuhn(imei) {
+        let sum = 0;
+        for (let i = 0; i < imei.length; i++) {
+            let digit = parseInt(imei[i]);
+            if ((imei.length - 1 - i) % 2 === 1) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
+            }
+            sum += digit;
+        }
+        return (sum % 10 === 0) && imei.length >= 14;
+    }
+
+    scannerInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+            const imei = scannerInput.value.trim();
+            scannerInput.value = '';
+            if (imei) await prosesIMEI(imei);
+        }
+    });
+
+    async function prosesIMEI(imei) {
+        const user = document.getElementById('userInput').value;
+        const bin = document.getElementById('binInput').value;
+        const site = document.getElementById('siteSelect').value;
+
+        if (!user || !bin) {
+            showToast("⚠️ Isi Nama & Bin dulu!");
+            return;
+        }
+
+        if (!isValidLuhn(imei)) {
+            showToast("❌ IMEI Tidak Valid!");
+            return;
+        }
+
+        // Animasi Loading
+        document.getElementById('mainApp').classList.add('loading');
+        showToast("⏳ Sinkronisasi ke Cloud...");
+
+        const payload = {
+            user: user,
+            site: site,
+            bin: bin.toUpperCase(),
+            imei: imei
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+
+            if (result.status === "success") {
+                showToast("✅ Berhasil Tersimpan!");
+                addToTable(payload, "Selesai");
+            } else {
+                showToast("❌ " + result.message);
+            }
+        } catch (error) {
+            showToast("❌ Gagal Koneksi Server!");
+            console.error(error);
+        } finally {
+            document.getElementById('mainApp').classList.remove('loading');
+            scannerInput.focus();
+        }
+    }
+
+    function addToTable(data, status) {
+        const row = `<tr>
+            <td>${new Date().toLocaleTimeString()}</td>
+            <td>${data.user}</td>
+            <td>${data.bin}</td>
+            <td><b>${data.imei}</b></td>
+            <td style="color:green">☁️ ${status}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('afterbegin', row);
+        localHistory.push(data);
+    }
+
+    function showToast(msg) {
+        toast.innerText = msg;
+        toast.className = "show";
+        setTimeout(() => toast.className = "", 3000);
+    }
+
+    function resetLokal() {
+        if(confirm("Hapus tampilan list? (Data di Cloud tetap aman)")) {
+            tableBody.innerHTML = '';
+            localHistory = [];
+        }
+    }
+
+    function exportToExcel() {
+        const ws = XLSX.utils.json_to_sheet(localHistory);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Scan_Session");
+        XLSX.writeFile(wb, "History_Scan_Lokal.xlsx");
+    }
+</script>
+</body>
+</html>
