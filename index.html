@@ -3,94 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IMEI Cloud Mobile v3.1</title>
+    <title>IMEI Cloud Auto-Submit v3.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --dark: #343a40; --bg: #f0f2f5; }
-        
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 10px; background: var(--bg); margin: 0; }
-        
         .container { max-width: 100%; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        
         .header { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px; }
         .header h2 { margin: 5px 0; font-size: 1.2rem; color: var(--primary); }
-        
-        /* Form Layout untuk Mobile */
         .config-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #eee; }
         .input-group { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 11px; font-weight: bold; color: #777; text-transform: uppercase; }
-        
-        input, select { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid #ccc; 
-            border-radius: 8px; 
-            font-size: 16px; /* Mencegah auto-zoom di iPhone */
-            background: white;
-        }
-
-        /* Scan Box Menonjol */
-        .scan-box { 
-            width: 100%; 
-            padding: 15px; 
-            border: 2px solid var(--warning); 
-            border-radius: 10px; 
-            font-size: 1.1rem; 
-            text-align: center; 
-            margin-bottom: 15px; 
-            background: #fffbe6;
-            font-weight: bold;
-        }
-        
-        /* Tombol disusun grid 2 kolom di HP */
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background: white; }
+        .scan-box { width: 100%; padding: 15px; border: 2px solid var(--warning); border-radius: 10px; font-size: 1.1rem; text-align: center; margin-bottom: 15px; background: #fffbe6; font-weight: bold; outline: none; }
+        .scan-box:focus { border-color: var(--primary); background: #e3f2fd; }
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        button { 
-            padding: 12px; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            font-size: 13px; 
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        .btn-excel { background: var(--success); color: white; grid-column: span 1; }
-        .btn-clear { background: var(--danger); color: white; grid-column: span 1; }
-
-        /* Tabel Responsif */
-        .table-wrapper { 
-            width: 100%; 
-            overflow-x: auto; /* Bisa geser kanan-kiri di HP */
-            margin-top: 10px; 
-            border-radius: 8px;
-            border: 1px solid #eee;
-        }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; } /* Paksa lebar minimal agar tidak sumpek */
+        button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-excel { background: var(--success); color: white; }
+        .btn-clear { background: var(--danger); color: white; }
+        .table-wrapper { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
         th { background: var(--primary); color: white; padding: 10px; font-size: 12px; }
         td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; text-align: center; }
-
-        /* Toast */
-        #toast { 
-            visibility: hidden; 
-            width: 90%; 
-            max-width: 300px;
-            background: rgba(0,0,0,0.85); 
-            color: #fff; 
-            text-align: center; 
-            border-radius: 25px; 
-            padding: 12px; 
-            position: fixed; 
-            z-index: 100; 
-            left: 50%; 
-            bottom: 30px; 
-            transform: translateX(-50%); 
-        }
+        #toast { visibility: hidden; width: 90%; max-width: 300px; background: rgba(0,0,0,0.85); color: #fff; text-align: center; border-radius: 25px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); }
         #toast.show { visibility: visible; animation: fadein 0.3s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        
         .loading { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
@@ -100,7 +38,7 @@
 
 <div class="container" id="mainApp">
     <div class="header">
-        <h2>📱 Smart IMEI Cloud Sync</h2>
+        <h2>📱 Smart IMEI Cloud v3.2</h2>
     </div>
 
     <div class="config-grid">
@@ -123,12 +61,12 @@
         </div>
     </div>
 
-    <label>🔍 Scan / Ketik IMEI</label>
-    <input type="text" id="scannerInput" class="scan-box" placeholder="Tap di sini untuk scan...">
+    <label>🔍 Scan IMEI (Otomatis Kirim)</label>
+    <input type="text" id="scannerInput" class="scan-box" placeholder="Siap scan..." autofocus>
 
     <div class="btn-group">
-        <button class="btn-excel" onclick="exportToExcel()">📊 Excel Lokal</button>
-        <button class="btn-clear" onclick="resetLokal()">🗑️ Bersihkan</button>
+        <button class="btn-excel" onclick="exportToExcel()">📊 Download Excel</button>
+        <button class="btn-clear" onclick="resetLokal()">🗑️ Reset View</button>
     </div>
 
     <div class="table-wrapper">
@@ -147,15 +85,18 @@
 </div>
 
 <script>
-    // --- MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI ---
+    // --- GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA ---
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOgcdYaNuwrjsni-LVvfLJwFSI3u8IlfmyS8YRR39FqNCj-gt6dyR33fWsFHdNIf3D/exec'; 
     
     const scannerInput = document.getElementById('scannerInput');
     const tableBody = document.getElementById('tableBody');
     const toast = document.getElementById('toast');
     let localHistory = [];
+    let typingTimer; 
 
+    // Validasi Luhn standar IMEI
     function isValidLuhn(imei) {
+        if (imei.length < 14) return false;
         let sum = 0;
         for (let i = 0; i < imei.length; i++) {
             let digit = parseInt(imei[i]);
@@ -165,11 +106,28 @@
             }
             sum += digit;
         }
-        return (sum % 10 === 0) && imei.length >= 14;
+        return (sum % 10 === 0);
     }
 
+    // AUTO-SUBMIT LOGIC
+    scannerInput.addEventListener('input', () => {
+        clearTimeout(typingTimer);
+        const imei = scannerInput.value.trim();
+        
+        // Jika panjang mencapai 15 (IMEI umumnya 15 digit)
+        if (imei.length >= 15) {
+            typingTimer = setTimeout(async () => {
+                const finalImei = scannerInput.value.trim();
+                scannerInput.value = '';
+                await prosesIMEI(finalImei);
+            }, 300); // Tunggu 300ms untuk memastikan scanner selesai kirim data
+        }
+    });
+
+    // Tetap bisa pakai Enter manual
     scannerInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter') {
+            clearTimeout(typingTimer);
             const imei = scannerInput.value.trim();
             scannerInput.value = '';
             if (imei) await prosesIMEI(imei);
@@ -187,7 +145,7 @@
         }
 
         if (!isValidLuhn(imei)) {
-            showToast("❌ IMEI Tidak Valid!");
+            showToast("❌ IMEI " + imei + " Tidak Valid!");
             return;
         }
 
@@ -197,29 +155,29 @@
         const payload = { user, site, bin: bin.toUpperCase(), imei };
 
         try {
-            const response = await fetch(SCRIPT_URL, {
+            await fetch(SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Penting untuk menghindari CORS error di HP
+                mode: 'no-cors', 
                 body: JSON.stringify(payload)
             });
 
-            // Karena mode no-cors, kita anggap sukses jika tidak ada error catch
-            showToast("✅ Terkirim ke Cloud");
-            addToTable(payload, "OK");
+            if (navigator.vibrate) navigator.vibrate(100); // Getar singkat
+            showToast("✅ Berhasil: " + imei);
+            addToTable(payload);
         } catch (error) {
-            showToast("❌ Gagal Sinkron!");
+            showToast("❌ Gagal Kirim!");
         } finally {
             document.getElementById('mainApp').classList.remove('loading');
             scannerInput.focus();
         }
     }
 
-    function addToTable(data, status) {
+    function addToTable(data) {
         const row = `<tr>
             <td>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
             <td>${data.bin}</td>
             <td>${data.imei}</td>
-            <td style="color:green">✔</td>
+            <td style="color:green">✔ Cloud</td>
         </tr>`;
         tableBody.insertAdjacentHTML('afterbegin', row);
         localHistory.push(data);
@@ -232,7 +190,7 @@
     }
 
     function resetLokal() {
-        if(confirm("Hapus list layar?")) {
+        if(confirm("Bersihkan list layar?")) {
             tableBody.innerHTML = '';
             localHistory = [];
         }
@@ -243,7 +201,7 @@
         const ws = XLSX.utils.json_to_sheet(localHistory);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Scan");
-        XLSX.writeFile(wb, "Scan_IMEI.xlsx");
+        XLSX.writeFile(wb, "Report_Scan_IMEI.xlsx");
     }
 </script>
 </body>
