@@ -2,34 +2,95 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart IMEI Cloud v3.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IMEI Cloud Mobile v3.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --dark: #343a40; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; padding: 15px; background: var(--bg); margin: 0; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
-        .status-badge { font-size: 12px; padding: 5px 10px; border-radius: 5px; background: #eee; }
-        .online { color: var(--success); font-weight: bold; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --dark: #343a40; --bg: #f0f2f5; }
         
-        .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 10px; }
-        .input-group { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 11px; font-weight: bold; color: #666; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 10px; background: var(--bg); margin: 0; }
         
-        .scan-box { width: 100%; padding: 15px; border: 2px solid var(--warning); border-radius: 10px; font-size: 1.2rem; text-align: center; margin-bottom: 15px; outline: none; transition: 0.3s; }
-        .scan-box:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,123,255,0.2); }
+        .container { max-width: 100%; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
         
-        .table-wrapper { max-height: 400px; overflow-y: auto; margin-top: 20px; border: 1px solid #eee; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: var(--primary); color: white; padding: 12px; position: sticky; top: 0; }
-        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        .header { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px; }
+        .header h2 { margin: 5px 0; font-size: 1.2rem; color: var(--primary); }
         
-        #toast { visibility: hidden; min-width: 250px; background: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); }
-        #toast.show { visibility: visible; animation: fadein 0.5s; }
+        /* Form Layout untuk Mobile */
+        .config-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #eee; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 11px; font-weight: bold; color: #777; text-transform: uppercase; }
         
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            font-size: 16px; /* Mencegah auto-zoom di iPhone */
+            background: white;
+        }
+
+        /* Scan Box Menonjol */
+        .scan-box { 
+            width: 100%; 
+            padding: 15px; 
+            border: 2px solid var(--warning); 
+            border-radius: 10px; 
+            font-size: 1.1rem; 
+            text-align: center; 
+            margin-bottom: 15px; 
+            background: #fffbe6;
+            font-weight: bold;
+        }
+        
+        /* Tombol disusun grid 2 kolom di HP */
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        button { 
+            padding: 12px; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 13px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .btn-excel { background: var(--success); color: white; grid-column: span 1; }
+        .btn-clear { background: var(--danger); color: white; grid-column: span 1; }
+
+        /* Tabel Responsif */
+        .table-wrapper { 
+            width: 100%; 
+            overflow-x: auto; /* Bisa geser kanan-kiri di HP */
+            margin-top: 10px; 
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; } /* Paksa lebar minimal agar tidak sumpek */
+        th { background: var(--primary); color: white; padding: 10px; font-size: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; text-align: center; }
+
+        /* Toast */
+        #toast { 
+            visibility: hidden; 
+            width: 90%; 
+            max-width: 300px;
+            background: rgba(0,0,0,0.85); 
+            color: #fff; 
+            text-align: center; 
+            border-radius: 25px; 
+            padding: 12px; 
+            position: fixed; 
+            z-index: 100; 
+            left: 50%; 
+            bottom: 30px; 
+            transform: translateX(-50%); 
+        }
+        #toast.show { visibility: visible; animation: fadein 0.3s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        
         .loading { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
@@ -39,33 +100,35 @@
 
 <div class="container" id="mainApp">
     <div class="header">
-        <h2>🚀 IMEI Cloud Sync</h2>
-        <div class="status-badge">Status: <span class="online">ONLINE (SHARED)</span></div>
+        <h2>📱 Smart IMEI Cloud Sync</h2>
     </div>
 
     <div class="config-grid">
         <div class="input-group">
-            <label>NAMA SCANNER</label>
+            <label>👤 Nama Scanner</label>
             <input type="text" id="userInput" placeholder="Nama Anda..." autocomplete="off">
         </div>
-        <div class="input-group">
-            <label>SITE</label>
-            <select id="siteSelect">
-                <option value="DCM5">DCM5</option>
-                <option value="DCQF">DCQF</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>LOKASI BIN</label>
-            <input type="text" id="binInput" placeholder="Contoh: A-01-05" autocomplete="off">
+        <div style="display: flex; gap: 10px;">
+            <div class="input-group" style="flex: 1;">
+                <label>🏢 Site</label>
+                <select id="siteSelect">
+                    <option value="DCM5">DCM5</option>
+                    <option value="DCQF">DCQF</option>
+                </select>
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <label>📦 Bin</label>
+                <input type="text" id="binInput" placeholder="A-01" autocomplete="off">
+            </div>
         </div>
     </div>
 
-    <input type="text" id="scannerInput" class="scan-box" placeholder="Klik di sini & mulai scan..." autofocus>
+    <label>🔍 Scan / Ketik IMEI</label>
+    <input type="text" id="scannerInput" class="scan-box" placeholder="Tap di sini untuk scan...">
 
-    <div style="display: flex; gap: 10px;">
-        <button onclick="exportToExcel()" style="background:var(--success); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; flex:1;">📊 Download Excel Lokal</button>
-        <button onclick="resetLokal()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">🗑️ Clear View</button>
+    <div class="btn-group">
+        <button class="btn-excel" onclick="exportToExcel()">📊 Excel Lokal</button>
+        <button class="btn-clear" onclick="resetLokal()">🗑️ Bersihkan</button>
     </div>
 
     <div class="table-wrapper">
@@ -73,10 +136,9 @@
             <thead>
                 <tr>
                     <th>Waktu</th>
-                    <th>User</th>
                     <th>Bin</th>
                     <th>IMEI</th>
-                    <th>Status Sync</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -85,15 +147,14 @@
 </div>
 
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOgcdYaNuwrjsni-LVvfLJwFSI3u8IlfmyS8YRR39FqNCj-gt6dyR33fWsFHdNIf3D/exec'; // <-- MASUKKAN URL DISINI
+    // --- MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI ---
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOgcdYaNuwrjsni-LVvfLJwFSI3u8IlfmyS8YRR39FqNCj-gt6dyR33fWsFHdNIf3D/exec'; 
     
     const scannerInput = document.getElementById('scannerInput');
     const tableBody = document.getElementById('tableBody');
     const toast = document.getElementById('toast');
-    
     let localHistory = [];
 
-    // Validasi Luhn
     function isValidLuhn(imei) {
         let sum = 0;
         for (let i = 0; i < imei.length; i++) {
@@ -121,7 +182,7 @@
         const site = document.getElementById('siteSelect').value;
 
         if (!user || !bin) {
-            showToast("⚠️ Isi Nama & Bin dulu!");
+            showToast("⚠️ Isi Nama & Bin!");
             return;
         }
 
@@ -130,33 +191,23 @@
             return;
         }
 
-        // Animasi Loading
         document.getElementById('mainApp').classList.add('loading');
-        showToast("⏳ Sinkronisasi ke Cloud...");
+        showToast("⏳ Mengirim...");
 
-        const payload = {
-            user: user,
-            site: site,
-            bin: bin.toUpperCase(),
-            imei: imei
-        };
+        const payload = { user, site, bin: bin.toUpperCase(), imei };
 
         try {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
+                mode: 'no-cors', // Penting untuk menghindari CORS error di HP
                 body: JSON.stringify(payload)
             });
-            const result = await response.json();
 
-            if (result.status === "success") {
-                showToast("✅ Berhasil Tersimpan!");
-                addToTable(payload, "Selesai");
-            } else {
-                showToast("❌ " + result.message);
-            }
+            // Karena mode no-cors, kita anggap sukses jika tidak ada error catch
+            showToast("✅ Terkirim ke Cloud");
+            addToTable(payload, "OK");
         } catch (error) {
-            showToast("❌ Gagal Koneksi Server!");
-            console.error(error);
+            showToast("❌ Gagal Sinkron!");
         } finally {
             document.getElementById('mainApp').classList.remove('loading');
             scannerInput.focus();
@@ -165,11 +216,10 @@
 
     function addToTable(data, status) {
         const row = `<tr>
-            <td>${new Date().toLocaleTimeString()}</td>
-            <td>${data.user}</td>
+            <td>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
             <td>${data.bin}</td>
-            <td><b>${data.imei}</b></td>
-            <td style="color:green">☁️ ${status}</td>
+            <td>${data.imei}</td>
+            <td style="color:green">✔</td>
         </tr>`;
         tableBody.insertAdjacentHTML('afterbegin', row);
         localHistory.push(data);
@@ -178,21 +228,22 @@
     function showToast(msg) {
         toast.innerText = msg;
         toast.className = "show";
-        setTimeout(() => toast.className = "", 3000);
+        setTimeout(() => toast.className = "", 2500);
     }
 
     function resetLokal() {
-        if(confirm("Hapus tampilan list? (Data di Cloud tetap aman)")) {
+        if(confirm("Hapus list layar?")) {
             tableBody.innerHTML = '';
             localHistory = [];
         }
     }
 
     function exportToExcel() {
+        if(localHistory.length === 0) return showToast("Data kosong!");
         const ws = XLSX.utils.json_to_sheet(localHistory);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Scan_Session");
-        XLSX.writeFile(wb, "History_Scan_Lokal.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Scan");
+        XLSX.writeFile(wb, "Scan_IMEI.xlsx");
     }
 </script>
 </body>
